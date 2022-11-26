@@ -21,6 +21,6 @@ export const createOrGetUser = async (res: any) => {
   if (env === 'development') {
     await axios.post(`http://localhost:3000/api/auth`, user);
   } else if (env === 'production') {
-    await axios.post(`http://next-js-pincture.vercel.app/api/auth`, user);
+    await axios.post(`https://next-js-pincture.vercel.app/api/auth`, user);
   }
 };
