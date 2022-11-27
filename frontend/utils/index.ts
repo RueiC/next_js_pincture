@@ -16,7 +16,6 @@ export const createOrGetUser = async (res: any) => {
   };
 
   const env = process.env.NODE_ENV;
-  console.log(env);
 
   if (env === 'development') {
     await axios.post(`http://localhost:3000/api/auth`, user);
