@@ -71,14 +71,14 @@ export default async function auth(req: NextApiRequest, res: NextApiResponse) {
         return sessionUser;
       },
 
-      async jwt({ token, user, account }) {
+      async jwt({ token, user }) {
         // Persist the OAuth access_token to the token right after signin
-        if (account) {
-          // token.accessToken = account.access_token;
-          // token.refreshToken = account.refresh_token;
-          // token.idToken = account.id_token;
-          // token.provider = account.provider;
-        }
+        // if (account) {
+        //   token.accessToken = account.access_token;
+        //   token.refreshToken = account.refresh_token;
+        //   token.idToken = account.id_token;
+        //   token.provider = account.provider;
+        // }
         if (user) {
           token.id = user.id.toString();
         }
