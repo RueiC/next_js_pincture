@@ -8,38 +8,51 @@ import { IoMdCloudDownload } from 'react-icons/io';
 import { useRouter } from 'next/router';
 
 import { urlFor } from '../utils/client';
-import { PinItem, SessionUser, SubmitState } from '../types';
+import type { PinItem, SessionUser, SubmitState } from '../types';
 import { useSession } from 'next-auth/react';
 import useCheckSaved from '../hooks/useCheckSaved';
 import { useStateContext } from '../store/stateContext';
-
-interface Props {
-  pin: PinItem;
-  setIsModalOpen: Dispatch<SetStateAction<ModalInfo>>;
-}
 
 interface ModalInfo {
   toggle: boolean;
   id: string;
 }
 
+interface Props {
+  pin: PinItem;
+  setIsModalOpen: Dispatch<SetStateAction<ModalInfo>>;
+}
+
 const Pin = ({ pin, setIsModalOpen }: Props) => {
   const [pinItem, setPinItem] = useState<PinItem | null>(pin);
   const [isHovered, setIsHovered] = useState<boolean>(false);
-  const router = useRouter();
-  const { data: session }: { data: SessionUser | null } = useSession();
   const [submitState, setSubmitState] = useState<SubmitState>({
     style: 'bg-red-500',
     text: '儲存',
     state: 'unSaved',
   });
+  const { data: session }: { data: SessionUser | null } = useSession();
   const isSaved = useCheckSaved({
     pinDetail: pinItem,
     session,
     setSubmitState,
   });
-
+  const router = useRouter();
   const { savePin, unSavePin } = useStateContext();
+
+  const toggleSavedBtn = async (pinItem: PinItem) => {
+    if (!pinItem || !session) return;
+
+    if (isSaved) {
+      await unSavePin(pinItem, session, setSubmitState).then((pin) =>
+        setPinItem(pin),
+      );
+    } else {
+      await savePin(pinItem, session, setSubmitState).then((pin) =>
+        setPinItem(pin),
+      );
+    }
+  };
 
   return (
     <>
@@ -88,47 +101,20 @@ const Pin = ({ pin, setIsModalOpen }: Props) => {
                     </Link>
                   </div>
                   {session.id !== pinItem.userId ? (
-                    <>
-                      {!isSaved ? (
-                        <button
-                          className={`${submitState.style} flex items-center justify-center opacity-80 hover:opacity-100 rounded-full text-white py-[0.5rem] px-[1rem] font-bold`}
-                          disabled={
-                            submitState.state === 'uploading' ? true : false
-                          }
-                          onClick={async (
-                            e: React.MouseEvent<HTMLButtonElement, MouseEvent>,
-                          ) => {
-                            e.stopPropagation();
-                            await savePin(
-                              pinItem,
-                              session,
-                              setSubmitState,
-                            ).then((pin) => setPinItem(pin));
-                          }}
-                        >
-                          {submitState.text}
-                        </button>
-                      ) : (
-                        <button
-                          className={`${submitState.style} flex items-center justify-center opacity-80 hover:opacity-100 rounded-full text-white py-[0.5rem] px-[1rem] font-bold`}
-                          disabled={
-                            submitState.state === 'uploading' ? true : false
-                          }
-                          onClick={async (
-                            e: React.MouseEvent<HTMLButtonElement, MouseEvent>,
-                          ) => {
-                            e.stopPropagation();
-                            await unSavePin(
-                              pinItem,
-                              session,
-                              setSubmitState,
-                            ).then((pin) => setPinItem(pin));
-                          }}
-                        >
-                          {submitState.text}
-                        </button>
-                      )}
-                    </>
+                    <button
+                      className={`${submitState.style} flex items-center justify-center opacity-80 hover:opacity-100 rounded-full text-white py-[0.5rem] px-[1rem] font-bold`}
+                      disabled={
+                        submitState.state === 'uploading' ? true : false
+                      }
+                      onClick={(
+                        e: React.MouseEvent<HTMLButtonElement, MouseEvent>,
+                      ) => {
+                        e.stopPropagation();
+                        toggleSavedBtn(pinItem);
+                      }}
+                    >
+                      {submitState.text}
+                    </button>
                   ) : null}
                 </div>
 

@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { toast } from 'react-toastify';
+import { v4 as uuidv4 } from 'uuid';
 import { PinItem, SessionUser, SubmitState, PinDetail } from '../types';
 import { client } from '../utils/client';
-import { v4 as uuidv4 } from 'uuid';
 
 interface defaultValue {
   isLoading: boolean;
@@ -28,7 +28,7 @@ interface defaultValue {
 const Context = createContext({} as defaultValue);
 
 export const StateProvider = ({ children }: { children: ReactNode }) => {
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const savePin = async (
     pinItem: PinItem | PinDetail,

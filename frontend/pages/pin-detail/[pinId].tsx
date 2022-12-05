@@ -8,7 +8,7 @@ import { GetServerSideProps, NextPage } from 'next';
 import { RiDeleteBin6Fill } from 'react-icons/ri';
 import { BsFillArrowUpRightCircleFill } from 'react-icons/bs';
 import { IoMdCloudDownload } from 'react-icons/io';
-import {
+import type {
   PageId,
   PinItem,
   Redirect,
@@ -84,11 +84,14 @@ const PinDetailPage: NextPage<Props> = ({
   pins,
 }) => {
   const [isHovered, setIsHovered] = useState<boolean>(false);
-  const router = useRouter();
   const [submitState, setSubmitState] = useState<SubmitState>({
     style: 'bg-red-500',
     text: '儲存',
     state: 'unSaved',
+  });
+  const [isModalOpen, setIsModalOpen] = useState<ModalInfo>({
+    toggle: false,
+    id: '',
   });
   const [newPinDetail, setNewPinDetail] = useState<PinDetail | null>(pinDetail);
   const isSaved = useCheckSaved({
@@ -96,13 +99,22 @@ const PinDetailPage: NextPage<Props> = ({
     session,
     setSubmitState,
   });
-
-  const [isModalOpen, setIsModalOpen] = useState<ModalInfo>({
-    toggle: false,
-    id: '',
-  });
-
+  const router = useRouter();
   const { savePin, unSavePin } = useStateContext();
+
+  const toggleSavedBtn = async (newPinDetail: PinDetail) => {
+    if (!newPinDetail || !session) return;
+
+    if (isSaved) {
+      await unSavePin(newPinDetail, session, setSubmitState).then((pinDetail) =>
+        setNewPinDetail(pinDetail),
+      );
+    } else {
+      await savePin(newPinDetail, session, setSubmitState).then((pinDetail) =>
+        setNewPinDetail(pinDetail),
+      );
+    }
+  };
 
   const deletePin = async (): Promise<void> => {
     await client.delete(pinId).then(() => {
@@ -159,54 +171,20 @@ const PinDetailPage: NextPage<Props> = ({
                       </Link>
                     </div>
                     {session.id !== newPinDetail.userId && (
-                      <>
-                        {!isSaved ? (
-                          <button
-                            className={`${submitState.style} flex items-center justify-center opacity-80 hover:opacity-100 transition-all duration-200 ease-linear rounded-full text-white py-[0.5rem] px-[1rem] font-bold`}
-                            disabled={
-                              submitState.state === 'uploading' ? true : false
-                            }
-                            onClick={async (
-                              e: React.MouseEvent<
-                                HTMLButtonElement,
-                                MouseEvent
-                              >,
-                            ) => {
-                              e.stopPropagation();
-
-                              await savePin(
-                                newPinDetail,
-                                session,
-                                setSubmitState,
-                              ).then((pinDetail) => setNewPinDetail(pinDetail));
-                            }}
-                          >
-                            {submitState.text}
-                          </button>
-                        ) : (
-                          <button
-                            className={`${submitState.style} flex items-center justify-center opacity-80 hover:opacity-100 transition-all duration-200 ease-linear rounded-full text-white py-[0.5rem] px-[1rem] font-bold`}
-                            disabled={
-                              submitState.state === 'uploading' ? true : false
-                            }
-                            onClick={async (
-                              e: React.MouseEvent<
-                                HTMLButtonElement,
-                                MouseEvent
-                              >,
-                            ) => {
-                              e.stopPropagation();
-                              await unSavePin(
-                                newPinDetail,
-                                session,
-                                setSubmitState,
-                              ).then((pinDetail) => setNewPinDetail(pinDetail));
-                            }}
-                          >
-                            {submitState.text}
-                          </button>
-                        )}
-                      </>
+                      <button
+                        className={`${submitState.style} flex items-center justify-center opacity-80 hover:opacity-100 transition-all duration-200 ease-linear rounded-full text-white py-[0.5rem] px-[1rem] font-bold`}
+                        disabled={
+                          submitState.state === 'uploading' ? true : false
+                        }
+                        onClick={async (
+                          e: React.MouseEvent<HTMLButtonElement, MouseEvent>,
+                        ) => {
+                          e.stopPropagation();
+                          toggleSavedBtn(newPinDetail);
+                        }}
+                      >
+                        {submitState.text}
+                      </button>
                     )}
                   </div>
 

@@ -1,5 +1,11 @@
 import { useEffect, useState } from 'react';
-import { PinDetail, PinItem, Save, SessionUser, SubmitState } from '../types';
+import type {
+  PinDetail,
+  PinItem,
+  Save,
+  SessionUser,
+  SubmitState,
+} from '../types';
 
 interface Props {
   session: SessionUser | null;
@@ -7,7 +13,11 @@ interface Props {
   setSubmitState: React.Dispatch<React.SetStateAction<SubmitState>>;
 }
 
-const useCheckSaved = ({ pinDetail, session, setSubmitState }: Props) => {
+const useCheckSaved = ({
+  pinDetail,
+  session,
+  setSubmitState,
+}: Props): boolean => {
   const [isSaved, setIsSaved] = useState<boolean>(false);
 
   useEffect(() => {
