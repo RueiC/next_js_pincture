@@ -1,6 +1,6 @@
 import { Session } from 'next-auth/core/types';
 import { useEffect, useState } from 'react';
-import useStore from '../store/store';
+import { useStateContext } from '../store/stateContext';
 import { PinItem } from '../types';
 import { client } from '../utils/client';
 import { categoryQuery } from '../utils/queries';
@@ -12,10 +12,10 @@ interface Props {
 
 const useCategoriesFilter = ({ categoryId, session }: Props) => {
   const [pins, setPins] = useState<PinItem[] | null>(null);
-  const { isLoading, toggleIsLoading } = useStore();
+  const { isLoading, setIsLoading } = useStateContext();
 
   useEffect(() => {
-    toggleIsLoading(true);
+    setIsLoading(true);
     if (!categoryId || !session) return;
 
     const getPins = async (): Promise<void> => {
@@ -26,7 +26,7 @@ const useCategoriesFilter = ({ categoryId, session }: Props) => {
     };
 
     getPins();
-    toggleIsLoading(false);
+    setIsLoading(false);
   }, [categoryId, session]);
 
   return { isLoading, pins };

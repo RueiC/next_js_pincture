@@ -8,13 +8,21 @@ import { GetServerSideProps, NextPage } from 'next';
 import { RiDeleteBin6Fill } from 'react-icons/ri';
 import { BsFillArrowUpRightCircleFill } from 'react-icons/bs';
 import { IoMdCloudDownload } from 'react-icons/io';
-import { PageId, PinItem, Redirect, PinDetail, SessionUser } from '../../types';
+import {
+  PageId,
+  PinItem,
+  Redirect,
+  PinDetail,
+  SessionUser,
+  SubmitState,
+} from '../../types';
 import { feedQuery } from '../../utils/queries';
 import MasonryLayout from '../../components/MasonryLayout';
 import { client } from '../../utils/client';
 import { pinDetailQuery } from '../../utils/queries';
 import { CommentField, ConfirmModal, NoResult } from '../../components';
 import useCheckSaved from '../../hooks/useCheckSaved';
+import { useStateContext } from '../../store/stateContext';
 
 interface ModalInfo {
   toggle: boolean;
@@ -77,11 +85,24 @@ const PinDetailPage: NextPage<Props> = ({
 }) => {
   const [isHovered, setIsHovered] = useState<boolean>(false);
   const router = useRouter();
-  const isSaved = useCheckSaved({ pinDetail, session });
+  const [submitState, setSubmitState] = useState<SubmitState>({
+    style: 'bg-red-500',
+    text: '儲存',
+    state: 'unSaved',
+  });
+  const [newPinDetail, setNewPinDetail] = useState<PinDetail | null>(pinDetail);
+  const isSaved = useCheckSaved({
+    pinDetail: newPinDetail,
+    session,
+    setSubmitState,
+  });
+
   const [isModalOpen, setIsModalOpen] = useState<ModalInfo>({
     toggle: false,
     id: '',
   });
+
+  const { savePin, unSavePin } = useStateContext();
 
   const deletePin = async (): Promise<void> => {
     await client.delete(pinId).then(() => {
@@ -101,7 +122,7 @@ const PinDetailPage: NextPage<Props> = ({
         <ConfirmModal deletePin={deletePin} setIsModalOpen={setIsModalOpen} />
       ) : null}
 
-      {pinDetail ? (
+      {newPinDetail ? (
         <div className='flex flex-col gap-[5rem]'>
           <div className='flex flex-col md:flex-row items-center md:items-start justify-center w-full h-full px-[3rem] md:px-[6rem] xl:px-[10rem] mt-[3rem] gap-[3rem]'>
             <div
@@ -111,8 +132,8 @@ const PinDetailPage: NextPage<Props> = ({
             >
               <Image
                 className='!relative !w-full rounded-[1rem] block'
-                src={pinDetail?.image?.asset?.url}
-                blurDataURL={pinDetail?.image?.asset?.url}
+                src={newPinDetail?.image?.asset?.url}
+                blurDataURL={newPinDetail?.image?.asset?.url}
                 alt='picture'
                 placeholder='blur'
                 fill
@@ -124,7 +145,7 @@ const PinDetailPage: NextPage<Props> = ({
                   <div className='flex items-center justify-between'>
                     <div className='flex items-center justify-center bg-white h-[2.5rem] w-[2.5rem] rounded-full text-black text-[1.2rem] opacity-70 hover:opacity-80 transition-all duration-200 ease-linear'>
                       <Link
-                        href={`${pinDetail.image.asset.url}?dl=`}
+                        href={`${newPinDetail.image.asset.url}?dl=`}
                         legacyBehavior
                       >
                         <a
@@ -137,32 +158,53 @@ const PinDetailPage: NextPage<Props> = ({
                         </a>
                       </Link>
                     </div>
-                    {session.id !== pinDetail.userId && (
+                    {session.id !== newPinDetail.userId && (
                       <>
                         {!isSaved ? (
-                          <div
-                            className='flex items-center justify-center bg-red-600 opacity-80 hover:opacity-100 transition-all duration-200 ease-linear rounded-full text-white py-[0.5rem] px-[1rem] font-bold'
-                            onClick={(
-                              e: React.MouseEvent<HTMLDivElement, MouseEvent>,
+                          <button
+                            className={`${submitState.style} flex items-center justify-center opacity-80 hover:opacity-100 transition-all duration-200 ease-linear rounded-full text-white py-[0.5rem] px-[1rem] font-bold`}
+                            disabled={
+                              submitState.state === 'uploading' ? true : false
+                            }
+                            onClick={async (
+                              e: React.MouseEvent<
+                                HTMLButtonElement,
+                                MouseEvent
+                              >,
                             ) => {
                               e.stopPropagation();
-                              // savePin(pinItem._id);
+
+                              await savePin(
+                                newPinDetail,
+                                session,
+                                setSubmitState,
+                              ).then((pinDetail) => setNewPinDetail(pinDetail));
                             }}
                           >
-                            儲存
-                          </div>
+                            {submitState.text}
+                          </button>
                         ) : (
-                          <div
-                            className='flex items-center justify-center bg-red-600 opacity-80 hover:opacity-100 transition-all duration-200 ease-linear rounded-full text-white py-[0.5rem] px-[1rem] font-bold'
-                            onClick={(
-                              e: React.MouseEvent<HTMLDivElement, MouseEvent>,
+                          <button
+                            className={`${submitState.style} flex items-center justify-center opacity-80 hover:opacity-100 transition-all duration-200 ease-linear rounded-full text-white py-[0.5rem] px-[1rem] font-bold`}
+                            disabled={
+                              submitState.state === 'uploading' ? true : false
+                            }
+                            onClick={async (
+                              e: React.MouseEvent<
+                                HTMLButtonElement,
+                                MouseEvent
+                              >,
                             ) => {
                               e.stopPropagation();
-                              // unSavePin(pinItem._id);
+                              await unSavePin(
+                                newPinDetail,
+                                session,
+                                setSubmitState,
+                              ).then((pinDetail) => setNewPinDetail(pinDetail));
                             }}
                           >
-                            已儲存
-                          </div>
+                            {submitState.text}
+                          </button>
                         )}
                       </>
                     )}
@@ -170,14 +212,14 @@ const PinDetailPage: NextPage<Props> = ({
 
                   <div className='flex justify-between w-full'>
                     <Link
-                      href={`/pin-detail/${pinDetail._id}`}
+                      href={`/pin-detail/${newPinDetail._id}`}
                       className='flex items-center justify-start bg-white opacity-70 hover:opacity-80 transition-all duration-200 ease-linear rounded-full text-black py-[0.5rem] px-[1rem]'
                     >
                       <BsFillArrowUpRightCircleFill className='mr-[0.5rem]' />
-                      {pinDetail.destination.slice(8, 25)}...
+                      {newPinDetail.destination.slice(8, 25)}...
                     </Link>
 
-                    {session.id === pinDetail.userId && (
+                    {session.id === newPinDetail.userId && (
                       <div
                         className='flex items-center justify-center text-[1.2rem] bg-white opacity-70 hover:opacity-80 rounded-full text-black h-[2.5rem] w-[2.5rem]'
                         onClick={(
@@ -198,24 +240,24 @@ const PinDetailPage: NextPage<Props> = ({
             <div className='flex flex-col gap-[1.5rem] w-full h-full'>
               <div>
                 <h1 className='text-[1.7rem] font-bold break-words text-text-1'>
-                  {pinDetail?.title}
+                  {newPinDetail?.title}
                 </h1>
                 <p className='mt-[0.6rem] text-[1.2rem] text-text-2 font-normal opacity-90'>
-                  {pinDetail?.about}
+                  {newPinDetail?.about}
                 </p>
               </div>
 
-              <Link href={`/user-profile/${pinDetail?.postedBy._id}`}>
+              <Link href={`/user-profile/${newPinDetail?.postedBy._id}`}>
                 <div className='flex items-center gap-[1rem]'>
                   <Image
                     className='rounded-full cursor-pointer'
-                    src={pinDetail?.postedBy?.image}
+                    src={newPinDetail?.postedBy?.image}
                     alt='user image'
                     width={40}
                     height={40}
                   />
                   <p className='cursor-pointer font-medium text-[1rem] text-text-2'>
-                    {pinDetail?.postedBy?.userName}
+                    {newPinDetail?.postedBy?.userName}
                   </p>
                 </div>
               </Link>
@@ -228,7 +270,7 @@ const PinDetailPage: NextPage<Props> = ({
             <p className='px-[3rem] md:px-[6rem] xl:px-[10rem] text-[2rem] font-bold'>
               更多內容
             </p>
-            {pins && <MasonryLayout pins={pins} />}
+            {pins ? <MasonryLayout pins={pins} /> : null}
           </div>
         </div>
       ) : (

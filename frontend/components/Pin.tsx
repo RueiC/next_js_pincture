@@ -1,18 +1,17 @@
 import React, { useState, Dispatch, SetStateAction } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { v4 as uuidv4 } from 'uuid';
 import { m } from 'framer-motion';
 import { RiDeleteBin6Fill } from 'react-icons/ri';
 import { BsFillArrowUpRightCircleFill } from 'react-icons/bs';
 import { IoMdCloudDownload } from 'react-icons/io';
 import { useRouter } from 'next/router';
-import { toast } from 'react-toastify';
 
-import { client, urlFor } from '../utils/client';
+import { urlFor } from '../utils/client';
 import { PinItem, SessionUser, SubmitState } from '../types';
 import { useSession } from 'next-auth/react';
 import useCheckSaved from '../hooks/useCheckSaved';
+import { useStateContext } from '../store/stateContext';
 
 interface Props {
   pin: PinItem;
@@ -27,98 +26,24 @@ interface ModalInfo {
 const Pin = ({ pin, setIsModalOpen }: Props) => {
   const [pinItem, setPinItem] = useState<PinItem | null>(pin);
   const [isHovered, setIsHovered] = useState<boolean>(false);
+  const router = useRouter();
+  const { data: session }: { data: SessionUser | null } = useSession();
   const [submitState, setSubmitState] = useState<SubmitState>({
     style: 'bg-red-500',
     text: '儲存',
-    state: 'none',
+    state: 'unSaved',
   });
-  const router = useRouter();
-  const { data: session }: { data: SessionUser | null } = useSession();
-  const isSaved = useCheckSaved({ pinDetail: pinItem, session });
+  const isSaved = useCheckSaved({
+    pinDetail: pinItem,
+    session,
+    setSubmitState,
+  });
 
-  const savePin = async (id: string): Promise<void> => {
-    if (pinItem === null || !session) return;
-
-    setSubmitState({
-      style: 'bg-gray-300',
-      text: '處理中',
-      state: 'uploading',
-    });
-
-    await client
-      .patch(id)
-      .setIfMissing({ save: [] })
-      .append('save', [
-        {
-          _key: uuidv4(),
-          userId: session.id,
-        },
-      ])
-      .commit()
-      .then(() => {
-        setPinItem({
-          ...pinItem,
-          save: [
-            {
-              _key: uuidv4(),
-              userId: session.id!,
-            },
-          ],
-        });
-
-        setSubmitState({
-          style: 'bg-red-500',
-          text: '已儲存',
-          state: 'none',
-        });
-
-        toast('儲存成功', { type: 'success' });
-      });
-  };
-
-  const unSavePin = async (id: string): Promise<void> => {
-    if (
-      pinItem === null ||
-      !session ||
-      !pinItem?.save ||
-      pinItem?.save === null
-    )
-      return;
-
-    setSubmitState({
-      style: 'bg-gray-300',
-      text: '處理中',
-      state: 'uploading',
-    });
-
-    const reviewsToRemove = [`save[userId=="${session.id}"]`];
-    await client
-      .patch(id)
-      .unset(reviewsToRemove)
-      .commit()
-      .then(() => {
-        const newSave = pinItem!.save!.filter((item) => {
-          return item.userId !== session.id;
-        });
-
-        setPinItem({
-          ...pinItem,
-          save: newSave,
-        });
-
-        setSubmitState({
-          style: 'bg-red-500',
-          text: '儲存',
-          state: 'none',
-        });
-
-        toast('已取消儲存', { type: 'success' });
-      });
-  };
+  const { savePin, unSavePin } = useStateContext();
 
   return (
     <>
-      {session && pinItem && (
+      {session && pinItem ? (
         <m.div
           className='w-full hover:-translate-y-1 transition-all duration-300 ease-in-out mb-[3rem] sm:mb-[1.8rem]'
           whileInView={{ opacity: [0, 1], y: [100, 0] }}
@@ -170,11 +95,15 @@ const Pin = ({ pin, setIsModalOpen }: Props) => {
                           disabled={
                             submitState.state === 'uploading' ? true : false
                           }
-                          onClick={(
+                          onClick={async (
                             e: React.MouseEvent<HTMLButtonElement, MouseEvent>,
                           ) => {
                             e.stopPropagation();
-                            savePin(pinItem._id);
+                            await savePin(
+                              pinItem,
+                              session,
+                              setSubmitState,
+                            ).then((pin) => setPinItem(pin));
                           }}
                         >
                           {submitState.text}
@@ -185,11 +114,15 @@ const Pin = ({ pin, setIsModalOpen }: Props) => {
                           disabled={
                             submitState.state === 'uploading' ? true : false
                           }
-                          onClick={(
+                          onClick={async (
                             e: React.MouseEvent<HTMLButtonElement, MouseEvent>,
                           ) => {
                             e.stopPropagation();
-                            unSavePin(pinItem._id);
+                            await unSavePin(
+                              pinItem,
+                              session,
+                              setSubmitState,
+                            ).then((pin) => setPinItem(pin));
                           }}
                         >
                           {submitState.text}
@@ -242,7 +175,7 @@ const Pin = ({ pin, setIsModalOpen }: Props) => {
             </div>
           </Link>
         </m.div>
-      )}
+      ) : null}
     </>
   );
 };
