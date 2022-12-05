@@ -1,12 +1,10 @@
-import { useState, useEffect } from "react";
-import { GetServerSideProps, NextPage } from "next";
-import { getSession } from "next-auth/react";
-import { Session } from "next-auth";
-import { Feeds, Spinner } from "../../components";
-import useStore from "../../store/store";
-import { categoryQuery } from "../../utils/queries";
-import { client } from "../../utils/client";
-import { PageId, PinItem, Redirect } from "../../types";
+import { GetServerSideProps, NextPage } from 'next';
+import { getSession } from 'next-auth/react';
+import { Session } from 'next-auth';
+import { Feeds, NoResult, Spinner } from '../../components';
+
+import { PageId, Redirect } from '../../types';
+import useCategoriesFilter from '../../hooks/useCategoriesFilter';
 
 interface ServerSideProps {
   props: {
@@ -21,7 +19,7 @@ interface Props {
 }
 
 export const getServerSideProps: GetServerSideProps = async (
-  context
+  context,
 ): Promise<Redirect | ServerSideProps> => {
   const session: Session | null = await getSession(context);
   const categoryId: PageId = context.query.categoryId;
@@ -29,7 +27,7 @@ export const getServerSideProps: GetServerSideProps = async (
   if (!session) {
     return {
       redirect: {
-        destination: "/login",
+        destination: '/login',
       },
       props: {},
     };
@@ -41,30 +39,14 @@ export const getServerSideProps: GetServerSideProps = async (
 };
 
 const Category: NextPage<Props> = ({ session, categoryId }) => {
-  const [pins, setPins] = useState<PinItem[] | null>(null);
-  const { isLoading, toggleIsLoading } = useStore();
-
-  useEffect(() => {
-    toggleIsLoading(true);
-    if (!categoryId || !session) return;
-
-    const getPins = async (): Promise<void> => {
-      const query: string = categoryQuery(categoryId);
-      await client.fetch(query).then((data: PinItem[]) => {
-        if (data.length > 0) setPins(data);
-      });
-    };
-
-    getPins();
-    toggleIsLoading(false);
-  }, [categoryId, session]);
+  const { pins, isLoading } = useCategoriesFilter({ categoryId, session });
 
   return (
     <>
       {isLoading ? (
         <Spinner />
       ) : (
-        <>{pins ? <Feeds pins={pins} /> : <Spinner />}</>
+        <>{pins ? <Feeds pins={pins} /> : <NoResult />}</>
       )}
     </>
   );

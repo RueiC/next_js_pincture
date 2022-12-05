@@ -50,11 +50,11 @@ const NavBar = () => {
           />
         </form>
 
-        {session && (
+        {session ? (
           <>
             <Link href={`/user-profile/${session.id}`}>
               <Image
-                className='rounded-full cursor-pointer hover:scale-110 duration-300 ease-in-out'
+                className='duration-300 ease-in-out rounded-full cursor-pointer hover:scale-110'
                 src={!session ? Images.userImage : session!.user!.image!}
                 alt='User Profile'
                 width={42}
@@ -71,7 +71,7 @@ const NavBar = () => {
               onClick={() => signOut()}
             />
           </>
-        )}
+        ) : null}
       </nav>
 
       {/* Mobile Nav */}
@@ -80,7 +80,7 @@ const NavBar = () => {
           showNavbar && 'translate-x-0'
         }`}
       >
-        {showNavbar && (
+        {showNavbar ? (
           <>
             <div className='flex items-center justify-between'>
               <img
@@ -95,7 +95,7 @@ const NavBar = () => {
               />
             </div>
 
-            {session && (
+            {session ? (
               <form
                 className='flex flex-col gap-[2rem]'
                 onSubmit={(e: React.FormEvent<HTMLFormElement>) => {
@@ -129,7 +129,7 @@ const NavBar = () => {
                       <p>{!session ? Images.userImage : session!.user!.name}</p>
                     </li>
 
-                    <li className='hover:-translate-y-1 transition-all duration-300 ease-in-out cursor-pointer'>
+                    <li className='transition-all duration-300 ease-in-out cursor-pointer hover:-translate-y-1'>
                       <Link
                         className='flex gap-[1rem] items-center'
                         href='/create-pin'
@@ -149,12 +149,12 @@ const NavBar = () => {
                   </ul>
                 </div>
               </form>
-            )}
+            ) : null}
           </>
-        )}
+        ) : null}
       </nav>
 
-      {!showNavbar && (
+      {!showNavbar ? (
         <div className='flex sm:hidden justify-between items-center w-full bg-white px-[3rem] pt-[1.5rem]'>
           <img
             className='w-[2.5rem] h-[2.5rem] cursor-pointer'
@@ -167,7 +167,7 @@ const NavBar = () => {
             onClick={() => setShowNavbar(true)}
           />
         </div>
-      )}
+      ) : null}
     </>
   );
 };

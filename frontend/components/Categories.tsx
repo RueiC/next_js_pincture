@@ -30,7 +30,7 @@ const Categories = () => {
 
   return (
     <>
-      {session && (
+      {session ? (
         <div className='flex items-center w-full px-[3rem] md:px-[6rem] xl:px-[10rem]'>
           <div className='flex items-center gap-[1rem] overflow-scroll scrollbar-hide pt-[1.5rem] sm:py-[0.5rem]'>
             {categories.map((category) => (
@@ -51,7 +51,7 @@ const Categories = () => {
             ))}
           </div>
         </div>
-      )}
+      ) : null}
     </>
   );
 };

@@ -1,72 +1,43 @@
-import { useState, useEffect } from "react";
-import { GetServerSideProps, NextPage } from "next";
-import { getSession } from "next-auth/react";
-import { Session } from "next-auth/core/types";
-import { Feeds, NoResult, Spinner } from "../components";
-import { feedQuery } from "../utils/queries";
-import { client } from "../utils/client";
-import { PinItem, Redirect } from "../types";
-import useStore from "../store/store";
+import React from 'react';
+import { GetServerSideProps, NextPage } from 'next';
+import { getSession } from 'next-auth/react';
+import { Session } from 'next-auth/core/types';
+import { Feeds, NoResult } from '../components';
+import { feedQuery } from '../utils/queries';
+import { client } from '../utils/client';
+import type { PinItem, Redirect } from '../types';
 
 interface ServerSideProps {
-  props: { session: Session };
+  props: { pins: PinItem[] };
 }
 
 interface Props {
-  session: Session;
+  pins: PinItem[];
 }
 
 export const getServerSideProps: GetServerSideProps = async (
-  context
+  context,
 ): Promise<Redirect | ServerSideProps> => {
   const session: Session | null = await getSession(context);
 
   if (!session) {
     return {
       redirect: {
-        destination: "/login",
+        destination: '/login',
       },
       props: {},
     };
   }
 
+  const pins = await client.fetch(feedQuery);
+
   return {
-    props: { session },
+    props: { pins },
   };
 };
 
-const Home: NextPage<Props> = ({ session }) => {
-  const [pins, setPins] = useState<PinItem[]>([]);
-  const { isLoading, toggleIsLoading } = useStore();
-
-  useEffect(() => {
-    toggleIsLoading(true);
-    if (!session) return;
-
-    const getData = async (): Promise<void | JSX.Element> => {
-      const data = await client.fetch(feedQuery);
-
-      if (data.length === 0) {
-        toggleIsLoading(false);
-        return <NoResult />;
-      } else {
-        setPins(data);
-        toggleIsLoading(false);
-      }
-    };
-
-    getData();
-  }, [session]);
-
-  return (
-    <>
-      {isLoading ? (
-        <Spinner />
-      ) : (
-        <>{pins ? <Feeds pins={pins} /> : <Spinner />}</>
-      )}
-    </>
-  );
+const Home: NextPage<Props> = ({ pins }) => {
+  return <>{pins?.length !== 0 ? <Feeds pins={pins} /> : <NoResult />}</>;
 };
 
 export default Home;

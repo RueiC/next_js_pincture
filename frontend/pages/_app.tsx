@@ -1,12 +1,12 @@
-import { useEffect, useState } from "react";
-import { LazyMotion, m, domAnimation } from "framer-motion";
-import { SessionProvider } from "next-auth/react";
-import { ToastContainer } from "react-toastify";
-import { AppProps } from "next/app";
+import { useEffect, useState } from 'react';
+import { LazyMotion, m, domAnimation } from 'framer-motion';
+import { SessionProvider } from 'next-auth/react';
+import { ToastContainer } from 'react-toastify';
+import { AppProps } from 'next/app';
 
-import { NavBar, Categories } from "../components/index";
-import "react-toastify/dist/ReactToastify.css";
-import "../styles/globals.css";
+import { NavBar, Categories } from '../components/index';
+import 'react-toastify/dist/ReactToastify.css';
+import '../styles/globals.css';
 
 interface CustomAppProps extends AppProps {
   session: any;
@@ -26,15 +26,15 @@ const MyApp = ({ Component, pageProps, router, session }: CustomAppProps) => {
       <LazyMotion features={domAnimation} strict>
         <m.div
           key={router.route}
-          initial="pageInitial"
-          animate="pageAnimate"
+          initial='pageInitial'
+          animate='pageAnimate'
           variants={{
             pageInitial: { opacity: 0 },
             pageAnimate: { opacity: 1 },
           }}
         >
           <ToastContainer
-            position="top-center"
+            position='top-center'
             autoClose={4000}
             hideProgressBar={false}
             newestOnTop={false}
@@ -43,14 +43,14 @@ const MyApp = ({ Component, pageProps, router, session }: CustomAppProps) => {
             pauseOnFocusLoss
             draggable
             pauseOnHover
-            theme="light"
+            theme='light'
           />
-          {router.route !== "/login" && (
+          {router.route !== '/login' ? (
             <>
               <NavBar />
               <Categories />
             </>
-          )}
+          ) : null}
 
           <Component {...pageProps} />
         </m.div>
